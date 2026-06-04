@@ -6,6 +6,7 @@ import java.util.UUID;
 public class RuleEngine {
     private final DataPipeline pipeline;
     private CoreBankingAdapter adapter; // 추가된 부분
+    private DashboardManager dashboard;
 
     // 실시간 탐지를 위한 룰셋 임계치 (핫스왑 업데이트 가능)
     private double highAmountThreshold = 10000000; // 1천만원 이상 단일 이체 시 적발
@@ -60,7 +61,14 @@ public class RuleEngine {
             if (adapter != null) {
                 adapter.sendBlockCommand(currentTx.getSenderAccount());
             }
-            return groupEvidence(currentTx, "고빈도_분할송금_스머핑", evidence);
+
+            WhiteBoxLog generatedLog = groupEvidence(currentTx, "고빈도_분할송금_스머핑", evidence);
+            if (dashboard != null) {
+                dashboard.updateStatistics(true); // 차단 통계 1 증가
+                dashboard.sendAlertPush(generatedLog); // 화면에 경고 팝업!
+            }
+            return generatedLog;
+
         }
 
         return null; // 정상 거래
@@ -79,8 +87,13 @@ public class RuleEngine {
         this.smurfingCountThreshold = newCount;
         System.out.println("[시스템] 룰 임계치가 성공적으로 업데이트되었습니다.");
     }
+
     public void setAdapter(CoreBankingAdapter adapter){
         this.adapter = adapter;
+    }
+
+    public void setDashboard(DashboardManager dashboard) {
+        this.dashboard = dashboard;
     }
 }
 
