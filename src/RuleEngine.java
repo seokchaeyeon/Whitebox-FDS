@@ -2,8 +2,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+
 public class RuleEngine {
     private final DataPipeline pipeline;
+    private CoreBankingAdapter adapter; // 추가된 부분
 
     // 실시간 탐지를 위한 룰셋 임계치 (핫스왑 업데이트 가능)
     private double highAmountThreshold = 10000000; // 1천만원 이상 단일 이체 시 적발
@@ -55,6 +57,9 @@ public class RuleEngine {
             for (Transaction e : evidence) {
                 e.updateStatus("BLOCKED");
             }
+            if (adapter != null) {
+                adapter.sendBlockCommand(currentTx.getSenderAccount());
+            }
             return groupEvidence(currentTx, "고빈도_분할송금_스머핑", evidence);
         }
 
@@ -74,4 +79,8 @@ public class RuleEngine {
         this.smurfingCountThreshold = newCount;
         System.out.println("[시스템] 룰 임계치가 성공적으로 업데이트되었습니다.");
     }
+    public void setAdapter(CoreBankingAdapter adapter){
+        this.adapter = adapter;
+    }
 }
+
